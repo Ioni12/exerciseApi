@@ -1,4 +1,8 @@
-use axum::{Json, extract::State, http::StatusCode};
+use axum::{
+    Json,
+    extract::{Path, State},
+    http::StatusCode,
+};
 use sqlx::PgPool;
 
 use crate::models::exercise_log::{ExerciseLog, NewExerciseLog};
@@ -38,4 +42,25 @@ pub async fn list_logs(
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(logs))
+}
+
+// DELETE /logs/{id}
+// Deletes one log. 204 if deleted, 404 if the id doesn't exist.
+pub async fn delete_log(
+    State(pool): State<PgPool>,
+    Path(id): Path<i32>,
+) -> Result<StatusCode, StatusCode> {
+    let result = sqlx::query("DELETE FROM exercise_logs WHERE id = $1")
+        .bind(id)
+        .execute(&pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("delete_log failed: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    if result.rows_affected() == 0 {
+        return Err(StatusCode::NOT_FOUND);
+    }
+    Ok(StatusCode::NO_CONTENT)
 }

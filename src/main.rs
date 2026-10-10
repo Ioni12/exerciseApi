@@ -1,10 +1,15 @@
 mod handlers;
 mod models;
 
-use axum::{Router, extract::State, http::StatusCode, routing::get};
+use axum::{
+    Router,
+    extract::State,
+    http::StatusCode,
+    routing::{delete, get},
+};
 use sqlx::{PgPool, postgres::PgPoolOptions};
 
-use handlers::exercise_log::{create_log, list_logs};
+use handlers::exercise_log::{create_log, delete_log, list_logs};
 
 #[tokio::main]
 async fn main() {
@@ -27,6 +32,7 @@ async fn main() {
     let app = Router::new()
         .route("/health", get(health))
         .route("/logs", get(list_logs).post(create_log))
+        .route("/logs/{id}", delete(delete_log))
         .with_state(pool);
 
     // Start server
